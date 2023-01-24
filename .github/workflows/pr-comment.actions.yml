@@ -12,12 +12,11 @@ jobs:
     container:
       image: tugboatqa/cli
     steps:
-      - run: echo ${{ github.event.number }}
       - name: Get Tugboat preview ID
         # @TODO: What if there is more than one preview for a PR?
         run: tugboat ls previews repo=${{ secrets.TUGBOAT_REPO }} -j | jq -r "first(.[] | select(.ref == \"pr$PULL_REQUEST_NUMBER\") | .id)" | sed 's/^/TUGBOAT_PREVIEW_ID=/' | cat >> $GITHUB_ENV
       - name: Rebuild preview
-        run: tugboat rebuild preview ${{ env.TUGBOAT_PREVIEW_ID }}
+        run: tugboat rebuild ${{ env.TUGBOAT_PREVIEW_ID }}
 
   run-integration-tests:
     if: github.event.issue.pull_request && github.event.comment.body == '@chromatic-devops run-integration-tests'
@@ -30,5 +29,5 @@ jobs:
         run: tugboat ls previews repo=${{ secrets.TUGBOAT_REPO }} -j | jq -r "first(.[] | select(.ref == \"pr$PULL_REQUEST_NUMBER\") | .id)" | sed 's/^/TUGBOAT_PREVIEW_ID=/' | cat >> $GITHUB_ENV
       - name: Get Tugboat integration tests service ID
         run: tugboat ls services repo=${{ secrets.TUGBOAT_REPO }} preview=${{ env.TUGBOAT_PREVIEW_ID }} -j | jq -r ".[] | select(.name==\"integration-tests\") | .id" | sed 's/^/tugboat_service_id_integeration_tests=/' | cat >> $GITHUB_ENV
-      - name: Get Tugboat service ID using Tugboat API
+      - name: Run integration tests
         run: tugboat shell ${{ env.tugboat_service_id_integeration_tests }} command=".tugboat/run-integration-tests.sh"
