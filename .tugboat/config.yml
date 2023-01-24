@@ -20,3 +20,7 @@ services:
       build:
         - php -r 'var_dump(gd_info());'
         - php -i
+  integration-tests:
+    image: 'chromatichq/node:latest'
+    expose: 80
+    checkout: true
