@@ -1,6 +1,9 @@
 ---
 name: Chromatic PR Comment Actions
 on: issue_comment
+env:
+  TUGBOAT_API_TOKEN: ${{ secrets.TUGBOAT_API_TOKEN }}
+  PULL_REQUEST_NUMBER: ${{ github.event.number }}
 
 jobs:
   rebuild-tugboat-preview:
@@ -8,15 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: tugboatqa/cli
-      env:
-        TUGBOAT_API_TOKEN: ${{ secrets.TUGBOAT_API_TOKEN }}
     steps:
       - run: echo ${{ github.event.number }}
       - name: Get Tugboat preview ID
-        env:
-          PULL_REQUEST_NUMBER: ${{ github.event.number }}
         # @TODO: What if there is more than one preview for a PR?
-        run: tugboat ls previews repo=${{ secrets.TUGBOAT_REPO }} -j | jq -r "first(.[] | select(.ref == \"pr${{ env.PULL_REQUEST_NUMBER }}\") | .id)" | sed 's/^/TUGBOAT_PREVIEW_ID=/' | cat >> $GITHUB_ENV
+        run: tugboat ls previews repo=${{ secrets.TUGBOAT_REPO }} -j | jq -r "first(.[] | select(.ref == \"pr$PULL_REQUEST_NUMBER\") | .id)" | sed 's/^/TUGBOAT_PREVIEW_ID=/' | cat >> $GITHUB_ENV
       - name: Rebuild preview
         run: tugboat rebuild preview ${{ env.TUGBOAT_PREVIEW_ID }}
 
@@ -25,14 +24,10 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: tugboatqa/cli
-      env:
-        TUGBOAT_API_TOKEN: ${{ secrets.TUGBOAT_API_TOKEN }}
     steps:
       - name: Get Tugboat preview ID
-        env:
-          PULL_REQUEST_NUMBER: ${{ github.event.number }}
         # @TODO: What if there is more than one preview for a PR?
-        run: tugboat ls previews repo=${{ secrets.TUGBOAT_REPO }} -j | jq -r "first(.[] | select(.ref == \"pr${{ env.PULL_REQUEST_NUMBER }}\") | .id)" | sed 's/^/TUGBOAT_PREVIEW_ID=/' | cat >> $GITHUB_ENV
+        run: tugboat ls previews repo=${{ secrets.TUGBOAT_REPO }} -j | jq -r "first(.[] | select(.ref == \"pr$PULL_REQUEST_NUMBER\") | .id)" | sed 's/^/TUGBOAT_PREVIEW_ID=/' | cat >> $GITHUB_ENV
       - name: Get Tugboat integration tests service ID
         run: tugboat ls services repo=${{ secrets.TUGBOAT_REPO }} preview=${{ env.TUGBOAT_PREVIEW_ID }} -j | jq -r ".[] | select(.name==\"integration-tests\") | .id" | sed 's/^/tugboat_service_id_integeration_tests=/' | cat >> $GITHUB_ENV
       - name: Get Tugboat service ID using Tugboat API
