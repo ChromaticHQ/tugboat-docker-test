@@ -13,9 +13,11 @@ jobs:
     steps:
       - name: Get Tugboat preview ID
         # @TODO: What if there is more than one preview for a PR?
-        run: tugboat ls previews repo=${{ secrets.TUGBOAT_REPO }} -j | jq -r "first(.[] | select(.ref == \"pr${{ github.event.number }}\") | .id)" | sed 's/^/tugboat_preview_id=/' >> $GITHUB_ENV
+        run: tugboat ls previews repo=${{ secrets.TUGBOAT_REPO }} -j | jq -r "first(.[] | select(.ref == \"pr${{ github.event.number }}\") | .id)" | sed 's/^/TUGBOAT_PREVIEW_ID=/' >> $GITHUB_ENV
+      - run: echo ${{ env }}
+      - run: echo ${{ env.TUGBOAT_PREVIEW_ID }}
       - name: Rebuild preview
-        run: tugboat rebuild preview ${{ env.tugboat_preview_id }}
+        run: tugboat rebuild preview ${{ env.TUGBOAT_PREVIEW_ID }}
 
   run-integration-tests:
     if: github.event.issue.pull_request && github.event.comment.body == '@chromatic-devops run-integration-tests'
