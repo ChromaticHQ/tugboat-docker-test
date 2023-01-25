@@ -14,6 +14,11 @@ jobs:
     outputs:
       outputPreviewId: ${{ steps.previewIdStep.outputs.TUGBOAT_PREVIEW_ID }}
     steps:
+      - name: Acknowledge with reaction
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          comment-id: ${{ github.event.comment.id }}
+          reactions: +1
       - name: Get Tugboat preview ID
         id: previewIdStep
         # @TODO: What if there is more than one preview for a PR?
@@ -40,3 +45,16 @@ jobs:
         run: tugboat ls services repo=${{ secrets.TUGBOAT_REPO }} preview=${{ needs.get-tugboat-preview-id.outputs.outputPreviewId }} -j | jq -r ".[] | select(.name==\"integration-tests\") | .id" | sed 's/^/tugboat_service_id_integeration_tests=/' | cat >> $GITHUB_ENV
       - name: Run integration tests
         run: tugboat shell ${{ env.tugboat_service_id_integeration_tests }} command=".tugboat/run-integration-tests.sh" &
+
+  complete-reaction:
+    if: ${{ always() && contains(join(needs.*.result, ','), 'success') }}
+    needs:
+      - rebuild-tugboat-preview
+      - run-integration-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Acknowledge with reaction
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          comment-id: ${{ github.event.comment.id }}
+          reactions: rocket
