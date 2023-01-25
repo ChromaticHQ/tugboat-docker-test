@@ -46,7 +46,7 @@ jobs:
       - name: Run integration tests
         run: tugboat shell ${{ env.tugboat_service_id_integeration_tests }} command=".tugboat/run-integration-tests.sh" &
 
-  complete-reaction:
+  success-reaction:
     if: ${{ always() && contains(join(needs.*.result, ','), 'success') }}
     needs:
       - rebuild-tugboat-preview

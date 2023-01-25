@@ -14,7 +14,6 @@ jobs:
       - uses: mshick/add-pr-comment@v2
         with:
           message: |
-            You can interact with Tugboat using the following commands!
+            You can interact with Tugboat using the following commands:
             * `@chromatic-devops rebuild tugboat`: Rebuild the Tugboat preview associated with this pull request.
-            * `@chromatic-devops run-integration-tests`: Run integration tests on the Tugboat associated with this pull request.
-
+            * `@chromatic-devops run-integration-tests`: Run integration tests on the Tugboat preview associated with this pull request.
