@@ -21,8 +21,12 @@ jobs:
           reactions: "+1"
       - name: Get Tugboat preview ID
         id: previewIdStep
-        # @TODO: What if there is more than one preview for a PR?
-        run: tugboat ls previews repo=${{ secrets.TUGBOAT_REPO }} -j | jq -r "first(.[] | select(.ref == \"pr$PULL_REQUEST_NUMBER\") | .id)" | sed 's/^/TUGBOAT_PREVIEW_ID=/' | cat >> $GITHUB_OUTPUT
+        uses: chromatichq/tugboat-pull-request-action@main
+        with:
+          tugboat-api-token: ${{ secrets.TUGBOAT_API_TOKEN }}
+          tugboat-repo-id: ${{ secrets.TUGBOAT_REPO }}
+          pull-request-number: ${{ env.PULL_REQUEST_NUMBER }}
+
 
   rebuild-tugboat-preview:
     if: github.event.issue.pull_request && github.event.comment.body == '@chromatic-devops rebuild tugboat'
