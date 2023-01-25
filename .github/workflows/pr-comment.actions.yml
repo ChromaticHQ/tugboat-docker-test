@@ -30,4 +30,4 @@ jobs:
       - name: Get Tugboat integration tests service ID
         run: tugboat ls services repo=${{ secrets.TUGBOAT_REPO }} preview=${{ env.TUGBOAT_PREVIEW_ID }} -j | jq -r ".[] | select(.name==\"integration-tests\") | .id" | sed 's/^/tugboat_service_id_integeration_tests=/' | cat >> $GITHUB_ENV
       - name: Run integration tests
-        run: tugboat shell ${{ env.tugboat_service_id_integeration_tests }} command=".tugboat/run-integration-tests.sh"
+        run: tugboat shell ${{ env.tugboat_service_id_integeration_tests }} command=".tugboat/run-integration-tests.sh" &
