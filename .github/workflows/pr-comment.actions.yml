@@ -16,7 +16,7 @@ jobs:
         # @TODO: What if there is more than one preview for a PR?
         run: tugboat ls previews repo=${{ secrets.TUGBOAT_REPO }} -j | jq -r "first(.[] | select(.ref == \"pr$PULL_REQUEST_NUMBER\") | .id)" | sed 's/^/TUGBOAT_PREVIEW_ID=/' | cat >> $GITHUB_ENV
       - name: Rebuild preview
-        run: tugboat rebuild ${{ env.TUGBOAT_PREVIEW_ID }}
+        run: tugboat rebuild ${{ env.TUGBOAT_PREVIEW_ID }} &
 
   run-integration-tests:
     if: github.event.issue.pull_request && github.event.comment.body == '@chromatic-devops run-integration-tests'
