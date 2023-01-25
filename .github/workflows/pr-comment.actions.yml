@@ -6,28 +6,39 @@ env:
   PULL_REQUEST_NUMBER: ${{ github.event.issue.number }}
 
 jobs:
-  rebuild-tugboat-preview:
-    if: github.event.issue.pull_request && github.event.comment.body == '@chromatic-devops rebuild tugboat'
+  get-tugboat-preview-id:
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '@chromatic-devops')
     runs-on: ubuntu-latest
     container:
       image: tugboatqa/cli
+    outputs:
+      outputPreviewId: ${{ steps.previewIdStep.outputs.tugboat_preview_id }}
     steps:
       - name: Get Tugboat preview ID
         # @TODO: What if there is more than one preview for a PR?
         run: tugboat ls previews repo=${{ secrets.TUGBOAT_REPO }} -j | jq -r "first(.[] | select(.ref == \"pr$PULL_REQUEST_NUMBER\") | .id)" | sed 's/^/TUGBOAT_PREVIEW_ID=/' | cat >> $GITHUB_ENV
+      - name: set preview ID
+        id: previewIdStep
+        run: echo "::set-output name=tugboat_preview_id::${{ env.tugboat_preview_id }}"
+
+  rebuild-tugboat-preview:
+    if: github.event.issue.pull_request && github.event.comment.body == '@chromatic-devops rebuild tugboat'
+    needs: get-tugboat-preview-id
+    runs-on: ubuntu-latest
+    container:
+      image: tugboatqa/cli
+    steps:
       - name: Rebuild preview
-        run: tugboat rebuild ${{ env.TUGBOAT_PREVIEW_ID }} &
+        run: tugboat rebuild ${{ needs.get-tugboat-preview-id.outputs.outputPreviewId }} &
 
   run-integration-tests:
     if: github.event.issue.pull_request && github.event.comment.body == '@chromatic-devops run-integration-tests'
+    needs: get-tugboat-preview-id
     runs-on: ubuntu-latest
     container:
       image: tugboatqa/cli
     steps:
-      - name: Get Tugboat preview ID
-        # @TODO: What if there is more than one preview for a PR?
-        run: tugboat ls previews repo=${{ secrets.TUGBOAT_REPO }} -j | jq -r "first(.[] | select(.ref == \"pr$PULL_REQUEST_NUMBER\") | .id)" | sed 's/^/TUGBOAT_PREVIEW_ID=/' | cat >> $GITHUB_ENV
       - name: Get Tugboat integration tests service ID
-        run: tugboat ls services repo=${{ secrets.TUGBOAT_REPO }} preview=${{ env.TUGBOAT_PREVIEW_ID }} -j | jq -r ".[] | select(.name==\"integration-tests\") | .id" | sed 's/^/tugboat_service_id_integeration_tests=/' | cat >> $GITHUB_ENV
+        run: tugboat ls services repo=${{ secrets.TUGBOAT_REPO }} preview=${{ needs.get-tugboat-preview-id.outputs.outputPreviewId }} -j | jq -r ".[] | select(.name==\"integration-tests\") | .id" | sed 's/^/tugboat_service_id_integeration_tests=/' | cat >> $GITHUB_ENV
       - name: Run integration tests
         run: tugboat shell ${{ env.tugboat_service_id_integeration_tests }} command=".tugboat/run-integration-tests.sh" &
