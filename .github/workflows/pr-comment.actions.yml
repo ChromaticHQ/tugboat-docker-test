@@ -12,14 +12,12 @@ jobs:
     container:
       image: tugboatqa/cli
     outputs:
-      outputPreviewId: ${{ steps.previewIdStep.outputs.tugboat_preview_id }}
+      outputPreviewId: ${{ steps.previewIdStep.outputs.TUGBOAT_PREVIEW_ID }}
     steps:
       - name: Get Tugboat preview ID
-        # @TODO: What if there is more than one preview for a PR?
-        run: tugboat ls previews repo=${{ secrets.TUGBOAT_REPO }} -j | jq -r "first(.[] | select(.ref == \"pr$PULL_REQUEST_NUMBER\") | .id)" | sed 's/^/TUGBOAT_PREVIEW_ID=/' | cat >> $GITHUB_ENV
-      - name: set preview ID
         id: previewIdStep
-        run: echo "::set-output name=tugboat_preview_id::${{ env.tugboat_preview_id }}"
+        # @TODO: What if there is more than one preview for a PR?
+        run: tugboat ls previews repo=${{ secrets.TUGBOAT_REPO }} -j | jq -r "first(.[] | select(.ref == \"pr$PULL_REQUEST_NUMBER\") | .id)" | sed 's/^/TUGBOAT_PREVIEW_ID=/' | cat >> $GITHUB_OUTPUT
 
   rebuild-tugboat-preview:
     if: github.event.issue.pull_request && github.event.comment.body == '@chromatic-devops rebuild tugboat'
