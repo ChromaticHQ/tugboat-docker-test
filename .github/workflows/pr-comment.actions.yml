@@ -18,7 +18,7 @@ jobs:
         uses: peter-evans/create-or-update-comment@v2
         with:
           comment-id: ${{ github.event.comment.id }}
-          reactions: +1
+          reactions: "+1"
       - name: Get Tugboat preview ID
         id: previewIdStep
         # @TODO: What if there is more than one preview for a PR?
