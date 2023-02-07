@@ -12,7 +12,7 @@ jobs:
     container:
       image: tugboatqa/cli
     outputs:
-      outputPreviewId: 63d156fbaf6a28e80b318863
+      outputPreviewId: ${{ steps.previewIdStep.outputs.tugboat-preview-id }}
     steps:
       - name: Acknowledge with reaction
         uses: peter-evans/create-or-update-comment@v2
