@@ -12,7 +12,7 @@ jobs:
     container:
       image: tugboatqa/cli
     outputs:
-      outputPreviewId: ${{ steps.previewIdStep.outputs.TUGBOAT_PREVIEW_ID }}
+      outputPreviewId: ${{ steps.previewIdStep.outputs.tugboat-preview-id }}
     steps:
       - name: Acknowledge with reaction
         uses: peter-evans/create-or-update-comment@v2
@@ -27,7 +27,6 @@ jobs:
           tugboat-repo-id: ${{ secrets.TUGBOAT_REPO }}
           pull-request-number: ${{ env.PULL_REQUEST_NUMBER }}
 
-
   rebuild-tugboat-preview:
     if: github.event.issue.pull_request && github.event.comment.body == '@chromatic-devops rebuild tugboat'
     needs: get-tugboat-preview-id
@@ -37,6 +36,16 @@ jobs:
     steps:
       - name: Rebuild preview
         run: tugboat rebuild ${{ needs.get-tugboat-preview-id.outputs.outputPreviewId }} &
+
+  run-drupal-config-tests:
+    if: github.event.issue.pull_request && github.event.comment.body == '@chromatic-devops run-drupal-config-tests'
+    needs: get-tugboat-preview-id
+    runs-on: ubuntu-latest
+    container:
+      image: tugboatqa/cli
+    steps:
+      - name: Run Drupal config tests
+        run: tugboat shell ${{ needs.get-tugboat-preview-id.outputs.outputPreviewId }} command=.tugboat/run-drupal-config-checks.sh &
 
   run-integration-tests:
     if: github.event.issue.pull_request && github.event.comment.body == '@chromatic-devops run-integration-tests'
@@ -48,12 +57,13 @@ jobs:
       - name: Get Tugboat integration tests service ID
         run: tugboat ls services repo=${{ secrets.TUGBOAT_REPO }} preview=${{ needs.get-tugboat-preview-id.outputs.outputPreviewId }} -j | jq -r ".[] | select(.name==\"integration-tests\") | .id" | sed 's/^/tugboat_service_id_integeration_tests=/' | cat >> $GITHUB_ENV
       - name: Run integration tests
-        run: tugboat shell ${{ env.tugboat_service_id_integeration_tests }} command=".tugboat/run-integration-tests.sh" &
+        run: tugboat shell ${{ env.tugboat_service_id_integeration_tests }} command=.tugboat/run-integration-tests.sh &
 
   success-reaction:
     if: ${{ always() && contains(join(needs.*.result, ','), 'success') }}
     needs:
       - rebuild-tugboat-preview
+      - run-drupal-config-tests
       - run-integration-tests
     runs-on: ubuntu-latest
     steps:
